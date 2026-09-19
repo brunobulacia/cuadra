@@ -1,18 +1,17 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/profile.dart';
+import '../services/captured_payments.dart';
 import '../services/realtime_service.dart';
 import 'repository_providers.dart';
 import 'sale_provider.dart';
 
-// ── MethodChannel / EventChannel constants ───────────────────────────────────
+// ── MethodChannel constants ──────────────────────────────────────────────────
 
-const _eventChannel = EventChannel('cuadra/notifications');
 const _methodChannel = MethodChannel('cuadra/hub');
 
 // ── State ────────────────────────────────────────────────────────────────────
@@ -120,10 +119,9 @@ class BossHubNotifier extends AutoDisposeNotifier<HubState> {
   /// (ahora: la notif de pago de QRWallet) y las postea al backend.
   void _listenNotifications(String businessId) {
     _notifSub?.cancel();
-    _notifSub = _eventChannel.receiveBroadcastStream().listen(
-      (raw) async {
+    _notifSub = capturedPayments.listen(
+      (data) async {
         try {
-          final data = jsonDecode(raw as String) as Map<String, dynamic>;
           await ref.read(notificationRepositoryProvider).saveNotification(
                 businessId: businessId,
                 monto: (data['monto'] as num).toDouble(),

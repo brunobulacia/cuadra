@@ -10,6 +10,7 @@ import '../../core/theme/product_visuals.dart';
 import '../../core/widgets/motion.dart';
 import '../../models/product.dart';
 import '../../providers/providers.dart';
+import '../../services/captured_payments.dart';
 
 class EmployeeHome extends ConsumerStatefulWidget {
   const EmployeeHome({super.key});
@@ -680,6 +681,7 @@ class _QrPaymentWaitingDialogState
   String? _pagador;
   Timer? _timeout;
   Timer? _poll;
+  StreamSubscription<Map<String, dynamic>>? _captureSub;
   bool _timedOut = false;
 
   /// capturedAt (hora del SERVIDOR) de la notif más reciente al abrir el
@@ -690,11 +692,29 @@ class _QrPaymentWaitingDialogState
   @override
   void initState() {
     super.initState();
+    _listenDeviceCapture();
     _startListening();
     _startPolling();
     _timeout = Timer(widget.timeout, () {
       if (mounted && !_confirmed) setState(() => _timedOut = true);
     });
+  }
+
+  /// Camino directo: si la notificación de pago llega a ESTE dispositivo, el
+  /// NotificationListenerService la captura y confirmamos sin pasar por el
+  /// backend. Solo ve notifs nuevas, así que no confirma con pagos viejos.
+  void _listenDeviceCapture() {
+    _captureSub = capturedPayments.listen(
+      (data) {
+        final monto = (data['monto'] as num?)?.toDouble() ?? 0;
+        debugPrint('QR capture: monto=$monto | esperado=${widget.monto}');
+        if ((monto - widget.monto).abs() <= 0.50) {
+          _confirm((data['texto_crudo'] as String?) ?? '');
+        }
+      },
+      // Sin canal nativo (ej. web) o JSON inválido: quedan WS y polling.
+      onError: (Object e) => debugPrint('QR capture: error → $e'),
+    );
   }
 
   Future<void> _startListening() async {
@@ -812,6 +832,7 @@ class _QrPaymentWaitingDialogState
   @override
   void dispose() {
     ref.read(realtimeServiceProvider).offNewNotification();
+    _captureSub?.cancel();
     _timeout?.cancel();
     _poll?.cancel();
     super.dispose();

@@ -39,6 +39,7 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
           .login(email: email, password: password);
       return AuthState(profile: result.profile);
     });
+    _rethrowIfError();
   }
 
   Future<void> register({
@@ -55,6 +56,15 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
       );
       return AuthState(profile: result.profile);
     });
+    _rethrowIfError();
+  }
+
+  /// AsyncValue.guard captura la excepción; la relanzamos para que la
+  /// pantalla que llamó pueda mostrar el error.
+  void _rethrowIfError() {
+    if (state.hasError) {
+      Error.throwWithStackTrace(state.error!, state.stackTrace!);
+    }
   }
 
   Future<void> logout() async {

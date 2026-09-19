@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/network/api_error.dart';
 import '../../core/router/app_router.dart';
 import '../../providers/providers.dart';
 
@@ -30,7 +31,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           .login(email: _emailCtrl.text.trim(), password: _passCtrl.text);
       // El router detecta el cambio de estado y redirige automáticamente
     } catch (e) {
-      if (mounted) setState(() => _error = e.toString());
+      if (mounted) setState(() => _error = apiErrorMessage(e));
     } finally {
       if (mounted) setState(() => _loading = false);
     }

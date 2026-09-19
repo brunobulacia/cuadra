@@ -3,10 +3,11 @@
 abstract class ApiEndpoints {
   /// URL base del backend (puerto 4000, para no chocar con QRWallet). Override:
   ///   `flutter run --dart-define=API_BASE_URL=http://HOST:4000/api`
-  /// Default = IP LAN de la Mac. Android emulator: `http://10.0.2.2:4000/api`.
+  /// Default = alias del emulador Android hacia el localhost de la Mac
+  /// (no cambia con el Wi-Fi). Dispositivo físico: pasar la IP LAN de la Mac.
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://192.168.0.17:4000/api',
+    defaultValue: 'http://10.0.2.2:4000/api',
   );
 
   // Auth
